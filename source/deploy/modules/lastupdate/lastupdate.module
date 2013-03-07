@@ -1,1 +1,52 @@
 <?php
+
+/**
+ * Implements hook_block_info().
+*/
+function lastupdate_block_info() {
+    $blocks['lastupdateblock'] = array(
+        'info' => t('Last Update Block'),
+        'cache' => DRUPAL_NO_CACHE,       
+    );
+    return $blocks;
+}
+
+/**
+* Implements hook_block_view().
+*/
+function lastupdate_block_view($delta='') {
+    $block = array();
+    switch ($delta) {
+        case 'lastupdateblock':
+            $block['subject'] = t('Last modified date: ');
+            $block['content'] = lastupdate_last_updated();
+            break;
+    }
+    return $block;
+}
+
+function lastupdate_last_updated() {
+    // Pull from cache if available
+    if ($cache = cache_get('lastupdate_last_updated')) {
+        $last_updated = $cache->data;
+    } else {
+        // Otherwise, find the timestamp for the latest node record
+        $last_updated = db_select('node', 'n')
+                ->fields('n', array('changed'))
+                ->condition('status', 0, '>') // only published nodes count
+                ->orderBy('changed', 'DESC')
+                ->range(0, 1)
+                ->execute()
+                ->fetchField();
+
+        // If nothing found, return FALSE.
+        if (!$last_updated) {
+            return FALSE;
+        }
+
+        // Otherwise, save the data to cache for one hour.
+        cache_set('mymodule_last_updated', $last_updated, 'cache', time() + 3600);
+    }
+
+    return format_date($last_updated);
+}
