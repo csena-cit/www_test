@@ -35,7 +35,7 @@ function lastupdate_last_updated() {
     }else{
     $last_updated = db_select('node', 'n')
             ->fields('n', array('changed'))
-            ->condition('status', 0, '>') // only published nodes count
+            ->condition('status', 0, '>') 
             ->orderBy('changed', 'DESC')
             ->range(0, 1)
             ->execute()
